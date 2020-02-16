@@ -15,10 +15,9 @@ namespace protocol
 
 
 
-using id_t = std::uint16_t;
-
 enum class data_type : std::uint8_t
 {
+	_None   = 0,
 	_Int    = 1,
 	_UInt   = 2,
 	_Double = 3,
@@ -26,17 +25,6 @@ enum class data_type : std::uint8_t
 	_Blob   = 5,
 
 	_Dico = 6
-};
-
-struct double_data
-{
-	static constexpr double precision = 10000.0;
-
-	double_data(double v);
-	double as_double() const;
-
-	std::int32_t significant_part;
-	std::int32_t exponant_part;
 };
 
 

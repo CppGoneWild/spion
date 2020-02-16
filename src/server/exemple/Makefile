@@ -18,8 +18,7 @@ SRC_NET =  ../../common/net/listener.cpp \
            ../../common/net/scoped_addrinfo.cpp \
            ../../common/net/socket.cpp
 
-SRC_PROTOCOL =  ../../common/protocol/packet.cpp \
-                ../../common/protocol/types.cpp
+SRC_PROTOCOL =  ../../common/protocol/packet.cpp
 
 SRC_SPION =  ../spion.cpp
 

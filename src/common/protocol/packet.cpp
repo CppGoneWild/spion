@@ -3,21 +3,48 @@
 
 #include <cstring>
 #include <cassert>
+#include <cmath>
 
 
 
-common::protocol::packet_header_data::packet_header_data(id_t id, data_type t, std::uint16_t s)
-: id(id), type(t), size(s)
+char const common::protocol::packet::magic_string_for_packet_mode[] = "spion-protocol=packet_mode_v1";
+
+
+
+common::protocol::packet::double_data::double_data(double v)
+{
+	int exponant;
+	double significant = std::frexp(v, &exponant);
+
+	significant_part = (std::int32_t)(significant * precision);
+	exponant_part = exponant;
+}
+
+double common::protocol::packet::double_data::as_double() const
+{
+	double tmp = (double)(significant_part) * precision;
+	return (std::ldexp(tmp, exponant_part));
+}
+
+
+
+
+
+
+common::protocol::packet::header_data::header_data(id_t id, data_type t, std::uint16_t s)
+: type(t), id(id), size(s)
 {}
 
 
 
-static common::protocol::packet _make_packet(common::protocol::packet_header_data const & header, void const * data)
-{
-	common::protocol::packet p;
-	p.reserve(sizeof(common::protocol::packet_header_data) + header.size);
 
-	for (std::size_t i = 0; i < sizeof(common::protocol::packet_header_data); ++i)
+
+static common::protocol::packet::payload _make_paylaod(common::protocol::packet::header_data const & header, void const * data)
+{
+	common::protocol::packet::payload p;
+	p.reserve(sizeof(common::protocol::packet::header_data) + header.size);
+
+	for (std::size_t i = 0; i < sizeof(common::protocol::packet::header_data); ++i)
 		p.push_back(((char const *)(&header))[i]);
 
 	for (std::size_t i = 0; i < header.size; ++i)
@@ -28,83 +55,47 @@ static common::protocol::packet _make_packet(common::protocol::packet_header_dat
 
 
 
-common::protocol::packet common::protocol::make_packet(id_t id, int value)
+common::protocol::packet::payload common::protocol::packet::make(id_t id, int value)
 {
 	std::int32_t tmp = value;
-	packet_header_data header(id, data_type::_Int, sizeof(tmp));
+	header_data header(id, data_type::_Int, sizeof(tmp));
 
-	return (_make_packet(header, &tmp));	
+	return (_make_paylaod(header, &tmp));	
 }
 
-common::protocol::packet common::protocol::make_packet(id_t id, unsigned int value)
+common::protocol::packet::payload common::protocol::packet::make(id_t id, unsigned int value)
 {
 	std::uint32_t tmp = value;
-	packet_header_data header(id, data_type::_UInt, sizeof(tmp));
+	header_data header(id, data_type::_UInt, sizeof(tmp));
 
-	return (_make_packet(header, &tmp));	
+	return (_make_paylaod(header, &tmp));	
 }
 
-common::protocol::packet common::protocol::make_packet(id_t id, double value)
+common::protocol::packet::payload common::protocol::packet::make(id_t id, double value)
 {
 	double_data double_encoder(value);
-	packet_header_data header(id, data_type::_Double, sizeof(double_encoder));
+	header_data header(id, data_type::_Double, sizeof(double_encoder));
 
-	return (_make_packet(header, &double_encoder));	
+	return (_make_paylaod(header, &double_encoder));	
 }
 
-common::protocol::packet common::protocol::make_packet(id_t id, char const * value)
+common::protocol::packet::payload common::protocol::packet::make(id_t id, char const * value)
 {
 	static_assert(sizeof(char) == 1, "need to upgrade serialisation for string");
 
 	assert(value);
 
-	packet_header_data header(id, data_type::_String, std::strlen(value));
+	header_data header(id, data_type::_String, std::strlen(value));
 
-	return (_make_packet(header, &value));	
+	return (_make_paylaod(header, &value));	
 }
 
-common::protocol::packet common::protocol::make_packet(id_t id, void const * value, std::size_t size)
+common::protocol::packet::payload common::protocol::packet::make(id_t id, void const * value, std::size_t size)
 {
 	assert(value);
 	assert(size);
 
-	packet_header_data header(id, data_type::_Blob, size);
+	header_data header(id, data_type::_Blob, size);
 
-	return (_make_packet(header, &value));	
-}
-
-
-
-
-
-
-
-
-
-
-
-void const * common::protocol::extract_packet(packet const & p, packet_header_data const ** header)
-{
-	void const * payload = nullptr;
-
-	assert(header);
-
-	if (p.size() >= sizeof(packet_header_data)) {
-		*header = (packet_header_data const *)(p.data());
-	}
-	else {
-		assert(false); // packet too small.
-		*header = nullptr;
-		return (nullptr);
-	}
-
-	if (p.size() != sizeof(packet_header_data) + (*header)->size) {
-		assert(false); // invalid packet size.
-		return (nullptr);
-	}
-
-	if ((*header)->size > 0)
-		payload = p.data() + sizeof(packet_header_data);		
-
-	return (payload);
+	return (_make_paylaod(header, &value));	
 }

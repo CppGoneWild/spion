@@ -5,8 +5,8 @@
 #include "common/net/poller.hh"
 #include "common/net/socket.hh"
 
-#include "common/protocol/types.hh"
 #include "common/protocol/packet.hh"
+#include "common/protocol/types.hh"
 
 
 #include <vector>
@@ -101,56 +101,49 @@ struct message
 		double d;
 	};
 
-	message(int);
-	message(double);
-	message(unsigned int);
-	message(char const *);
-	message(void const *, std::size_t size);
+	message(char const * id_str, int);
+	message(char const * id_str, double);
+	message(char const * id_str, unsigned int);
+	message(char const * id_str, char const *);
+	message(char const * id_str, void const *, std::size_t size);
 
 	common::protocol::data_type type;
+	std::string id_str;
 	data_t data;
 	std::vector<char> str_or_blob;
 };
-
-message::message(int value)
-:type(common::protocol::data_type::_Int), data(), str_or_blob()
-{
-	data.i = value;
-}
-
-message::message(double value)
-:type(common::protocol::data_type::_Double), data(), str_or_blob()
-{
-	data.d = value;
-}
-
-message::message(unsigned int value)
-:type(common::protocol::data_type::_UInt), data(), str_or_blob()
-{
-	data.ui = value;
-}
-
-message::message(char const * value)
-:type(common::protocol::data_type::_String), data(), str_or_blob()
-{
-	str_or_blob.reserve(std::strlen(value));
-	for (std::size_t i = 0; value[i]; ++i)
-		str_or_blob.push_back(value[i]);
-}
-
-message::message(void const * blob, std::size_t size)
-:type(common::protocol::data_type::_Blob), data(), str_or_blob()
-{
-	str_or_blob.reserve(size);
-	for (std::size_t i = 0; i < size; ++i)
-		str_or_blob.push_back(((char const *)(blob))[i]);
-}
 
 
 
 ////////////////////////////////////////////////////////////////////////////////
 //                                SpionServer                                 //
 ////////////////////////////////////////////////////////////////////////////////
+
+class SpionClient
+{
+public:
+	enum Protocol { String = 0, Packet = 1 };
+
+	SpionClient()                           = default;
+	SpionClient(SpionClient &&)             = default;
+	~SpionClient()                          = default;
+	SpionClient & operator=(SpionClient &&) = default;
+
+	explicit SpionClient(common::net::socket &&);
+
+	bool operator==(SpionClient const &) const;
+	bool operator!=(SpionClient const &) const;
+
+	bool send(message const &)
+	message on_recv();
+
+private:	
+	SpionClient(SpionClient const &) = default;
+	SpionClient & operator=(SpionClient const &) = default;
+
+	common::net::socket _socket;
+	Protocol _protocol = Protocol::String;
+};
 
 
 
@@ -163,7 +156,7 @@ public:
 	bool init(unsigned short port_number);
 	void clean();
 
-	void send(char const *, message &&);
+	void send(message &&);
 
 private:
 	SpionServer(SpionServer const &)             = delete;
@@ -171,18 +164,13 @@ private:
 	SpionServer & operator=(SpionServer const &) = delete;
 	SpionServer & operator=(SpionServer &&)      = delete;
 
-	common::protocol::id_t find_id(char const *);
-	void send(common::protocol::packet const &);
+	common::net::listener  _listener;
+	std::list<SpionCLient> _clients;
+	common::net::poller    _poller;
 
-	common::net::listener          _listener;
-	std::list<common::net::socket> _clients;
-	common::net::poller            _poller;
+	dico                   _dico;
 
-	dico                           _dico;
-
-	std::mutex                     _mutex_listener;
-	std::mutex                     _mutex_clients;
-	std::thread                    _th;
+	std::thread            _th;
 
 	static void thread_fct(SpionServer *);
 };
@@ -190,15 +178,6 @@ private:
 
 bool SpionServer::init(unsigned short port_number)
 {
-	{
-		std::lock_guard<std::mutex> lck(_mutex_listener);
-
-		if (_listener.init(port_number) == false)
-			return (false);
-
-		_poller.add(_listener);
-	}
-
 	_th = std::thread(SpionServer::thread_fct, this);
 	_th.detach();
 
@@ -206,117 +185,20 @@ bool SpionServer::init(unsigned short port_number)
 }
 
 void SpionServer::clean()
+{}
+
+void SpionServer::send(message && msg)
 {
-	{
-		std::lock_guard<std::mutex> lck(_mutex_clients);
-		for (auto it = _clients.begin(); it != _clients.end(); ++it) {
-			// _poller.remove(*it);
-			it->close();
-		}		
-	}
-
-	{
-		std::lock_guard<std::mutex> lck(_mutex_listener);
-		_poller.remove(_listener);
-		_listener.close();
-	}
-}
-
-void SpionServer::send(char const * str_id, message && msg)
-{
-	common::protocol::packet_header_data header;
-	common::protocol::packet p;
-
-	header.id = find_id(str_id);
-	header.type = msg.type;
-	if (msg.type == common::protocol::data_type::_String ||
-	    msg.type == common::protocol::data_type::_Blob)
-	{
-		header.size = msg.str_or_blob.size();
-		p = common::protocol::make_packet(header, msg.str_or_blob.data());
-	}
-	else
-	{
-		if (msg.type == common::protocol::data_type::_Double) {
-			common::protocol::double_data tmp(msg.data.d);
-			header.size = sizeof(tmp);
-			p = common::protocol::make_packet(header, &tmp);
-		}
-		else {
-			header.size = sizeof(std::int32_t);
-			p = common::protocol::make_packet(header, &(msg.data.i));
-		}
-
-	}
-
-	send(p);
-}
-
-common::protocol::id_t SpionServer::find_id(char const * str_id)
-{
-	auto found = _dico.find(str_id);
-
-	if (found.second == false) {
-		common::protocol::packet_header_data dico_header;
-
-		dico_header.id = found.first;
-		dico_header.type = common::protocol::data_type::_Dico;
-		dico_header.size = std::strlen(str_id);
-
-		common::protocol::packet dico_packet = common::protocol::make_packet(dico_header, str_id);
-		send(dico_packet);
-	}
-
-	return (found.first);
-}
-
-void SpionServer::send(common::protocol::packet const & p)
-{
-	std::lock_guard<std::mutex> lck(_mutex_clients);
+	message _msg(msg);
 
 	for (auto it = _clients.begin(); it != _clients.end(); ++it)
-		it->send(p.data(), p.size());
+		it->send(_msg);
 }
 
 void SpionServer::thread_fct(SpionServer * self)
-{
-	for (;;) {
-
-		{
-			std::lock_guard<std::mutex> lck(self->_mutex_listener);
-			if (self->_listener.is_ok() == false)
-				return ;			
-		}
-
-		auto poll_list = self->_poller.poll(std::chrono::milliseconds(100));
-
-		for (auto it = poll_list.begin(); it != poll_list.end(); ++it)
-		{
-			{
-				std::lock_guard<std::mutex> lck_l(self->_mutex_listener);
-				if (self->_listener == *it) {
-
-					std::lock_guard<std::mutex> lck_c(self->_mutex_clients);
-
-					self->_clients.emplace_back(self->_listener.accept());
-					// self->_poller.add(_client.back());
-				}
-
-			}
-
-		}
-
-	} // end-thread-loop
-
-}
+{}
 
 
-
-SpionServer & bucket_for_server()
-{
-	static SpionServer server;
-	return (server);
-}
 
 
 
@@ -331,41 +213,50 @@ SpionServer & bucket_for_server()
 
 
 
+
+static SpionServer & _static_spion_server()
+{
+	static SpionServer server;
+	return (server);
+}
+
+
+
 bool spion::init(unsigned short port_number)
 {
-	return (bucket_for_server().init(port_number));
+	return (_static_spion_server().init(port_number));
 }
 
 void spion::clean()
 {
-	bucket_for_server().clean();
+	_static_spion_server().clean();
 }
 
 
 
 void spion::send_ro(char const * str_id, int value)
 {
-	bucket_for_server().send(str_id, message(value));
+	_static_spion_server().send(message(str_id, value));
 }
 
 void spion::send_ro(char const * str_id, double value)
 {
-	bucket_for_server().send(str_id, message(value));
+	_static_spion_server().send(message(str_id, value));
 }
 
 void spion::send_ro(char const * str_id, unsigned int value)
 {
-	bucket_for_server().send(str_id, message(value));
+	_static_spion_server().send(message(str_id, value));
 }
 
 void spion::send_ro(char const * str_id, char const * value)
 {
-	bucket_for_server().send(str_id, message(value));
+	_static_spion_server().send(message(str_id, value));
 }
 
 void spion::send_ro(char const * str_id, void const * blob, std::size_t size)
 {
-	bucket_for_server().send(str_id, message(blob, size));
+	_static_spion_server().send(message(str_id, blob, size));
 }
 
 

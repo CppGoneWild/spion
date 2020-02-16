@@ -19,7 +19,7 @@ int main(int, char **)
 	if (client.connect("127.0.0.1", 4242) == false)
 		return (2);
 
-	common::protocol::packet p = common::protocol::make_packet(42, "hello world");
+	common::protocol::packet::payload p = common::protocol::packet::make(42, "hello world");
 
 	client.send(p.data(), p.size());
 

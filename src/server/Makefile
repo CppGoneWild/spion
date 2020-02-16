@@ -6,8 +6,7 @@ SRC_NET =  ../common/net/listener.cpp ../common/net/listener.hh \
            ../common/net/socket.cpp ../common/net/socket.hh \
            ../common/net/types.hh
 
-SRC_PROTOCOL =  ../common/protocol/packet.cpp ../common/protocol/packet.hh \
-                ../common/protocol/types.cpp ../common/protocol/types.hh
+SRC_PROTOCOL =  ../common/protocol/packet.cpp ../common/protocol/packet.hh
 
 SRC = spion.cpp spion.hh
 
