@@ -1,5 +1,4 @@
 #include "connect.hh"
-#include "socket.hh"
 #include "scoped_addrinfo.hh"
 
 
@@ -11,7 +10,6 @@
 
 #include <string>
 #include <iostream>
-#include <cassert>
 
 
 
@@ -32,11 +30,8 @@ static void _init_addr_info(struct addrinfo & to_init)
 
 
 
-bool common::net::connect(socket & sock_to_connect, char const * addr, port_t port)
+common::net::socket common::net::connect(char const * addr, port_t port)
 {
-	assert(sock_to_connect.handler() == not_a_socket); // ensure not already open
-
-
 	// first, load up address structs with getaddrinfo():
 	struct addrinfo hints;
 	_init_addr_info(hints);
@@ -47,7 +42,7 @@ bool common::net::connect(socket & sock_to_connect, char const * addr, port_t po
 	int status = ::getaddrinfo(addr, port_str.c_str(), &hints, res.gget());
 	if (status  != 0) {
 		std::cerr << "getaddrinfo: " << ::gai_strerror(status) << std::endl;
-		return (false);
+		return (common::net::socket());
 	}
 
 	// loop through all the results
@@ -66,10 +61,10 @@ bool common::net::connect(socket & sock_to_connect, char const * addr, port_t po
 			::close(sock);
 			continue;
 		}
-		
-		sock_to_connect.handler() = sock;
+
+		return (common::net::socket(sock));
 		break;
 	}
 
-	return (sock_to_connect.handler() != not_a_socket);
+	return (common::net::socket());
 }

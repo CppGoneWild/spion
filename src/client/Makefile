@@ -19,7 +19,8 @@ SRC_NET =  ../common/net/connect.cpp \
            ../common/net/scoped_addrinfo.cpp \
            ../common/net/socket.cpp
 
-SRC_PROTOCOL =  ../../common/protocol/packet.cpp
+SRC_PROTOCOL =  ../common/protocol/packet.cpp \
+                ../common/protocol/types.cpp
 
 SRC = $(SRC_IMGUI) $(SRC_LOGG) $(SRC_NET) $(SRC_PROTOCOL) main.cpp
 

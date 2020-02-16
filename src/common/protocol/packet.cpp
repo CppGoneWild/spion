@@ -2,6 +2,7 @@
 
 
 #include <cstring>
+#include <cassert>
 
 
 
@@ -13,10 +14,10 @@ common::protocol::packet_header_data::packet_header_data(id_t id, data_type t, s
 
 static common::protocol::packet _make_packet(common::protocol::packet_header_data const & header, void const * data)
 {
-	packet p;
-	p.reserve(sizeof(packet_header_data) + header.size);
+	common::protocol::packet p;
+	p.reserve(sizeof(common::protocol::packet_header_data) + header.size);
 
-	for (std::size_t i = 0; i < sizeof(packet_header_data); ++i)
+	for (std::size_t i = 0; i < sizeof(common::protocol::packet_header_data); ++i)
 		p.push_back(((char const *)(&header))[i]);
 
 	for (std::size_t i = 0; i < header.size; ++i)

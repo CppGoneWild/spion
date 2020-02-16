@@ -4,13 +4,7 @@
 
 
 #include "types.hh"
-
-
-namespace common {
-namespace net {
-	class socket;
-} // net
-} // common
+#include "socket.hh"
 
 
 
@@ -23,7 +17,7 @@ namespace net
 
 // Used client side to initialise a socket connected to a distant host
 // Only tcp-ip/ipv4
-bool connect(socket & socket, char const * addr, port_t port);
+socket connect(char const * addr, port_t port);
 
 
 

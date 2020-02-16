@@ -2,6 +2,10 @@
 #include "connect.hh"
 
 
+#include <cassert>
+
+
+
 bool common::net::client::is_ok() const
 {
 	return (_socket.is_ok());
@@ -14,10 +18,12 @@ common::net::client::operator bool () const
 
 bool common::net::client::connect(char const * addr, port_t port)
 {
-	bool res = common::net::connect(_socket, addr, port);
-	if (res)
+	assert(is_ok() == false); // ensure socket is not already connected.
+
+	_socket = common::net::connect(addr, port);
+	if (is_ok())
 		_poller.set(_socket);
-	return (res);
+	return (is_ok());
 }
 
 int common::net::client::send(void const * msg, int len)
