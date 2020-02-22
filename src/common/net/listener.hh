@@ -24,6 +24,9 @@ public:
 	listener & operator=(listener &&) = default;
 	~listener()                       = default;
 
+	bool operator==(socket_handler_t const &) const;
+	bool operator!=(socket_handler_t const &) const;
+
 	bool operator==(socket const &) const;
 	bool operator!=(socket const &) const;
 

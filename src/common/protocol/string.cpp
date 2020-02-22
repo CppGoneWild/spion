@@ -15,6 +15,19 @@ static std::string to_string(common::protocol::data_type type)
 	return ("-unknow-");
 }
 
+static common::protocol::data_type from_string(std::string const & str)
+{
+	if (str == "int")
+		return (common::protocol::data_type::_Int);
+	if (str == "uint")
+		return (common::protocol::data_type::_UInt);
+	if (str == "double")
+		return (common::protocol::data_type::_Double);
+	if (str == "string")
+		return (common::protocol::data_type::_String);
+	return (common::protocol::data_type::_None);
+}
+
 static common::protocol::string::payload _make(common::protocol::data_type type,
                                                const char * id_str,
                                                std::string const & value)
@@ -25,9 +38,12 @@ static common::protocol::string::payload _make(common::protocol::data_type type,
 	str += to_string(type);
 	str += ") [";
 	str += id_str;
-	str += "] = '";
+	str += "] =";
 	str += value;
-	str += "]";
+
+	// telnet end of line
+	str += '\r';
+	str += '\n';
 
 	return (str);
 }

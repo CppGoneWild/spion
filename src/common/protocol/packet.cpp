@@ -8,10 +8,11 @@
 
 
 char const common::protocol::packet::magic_string_for_packet_mode[] = "spion-protocol=packet_mode_v1";
+char const common::protocol::packet::magic_string_for_string_mode[8] = "pstring";
 
 
 
-common::protocol::packet::double_data::double_data(double v)
+common::protocol::packet::double_payload_encoder::double_payload_encoder(double v)
 {
 	int exponant;
 	double significant = std::frexp(v, &exponant);
@@ -20,7 +21,7 @@ common::protocol::packet::double_data::double_data(double v)
 	exponant_part = exponant;
 }
 
-double common::protocol::packet::double_data::as_double() const
+double common::protocol::packet::double_payload_encoder::as_double() const
 {
 	double tmp = (double)(significant_part) * precision;
 	return (std::ldexp(tmp, exponant_part));
@@ -73,7 +74,7 @@ common::protocol::packet::payload common::protocol::packet::make(id_t id, unsign
 
 common::protocol::packet::payload common::protocol::packet::make(id_t id, double value)
 {
-	double_data double_encoder(value);
+	double_payload_encoder double_encoder(value);
 	header_data header(id, data_type::_Double, sizeof(double_encoder));
 
 	return (_make_paylaod(header, &double_encoder));	

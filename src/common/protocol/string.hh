@@ -27,16 +27,22 @@ payload make(const char * id_str, double);
 payload make(const char * id_str, char const *);
 //payload make(id_t, void const *, std::size_t);
 
-template <class SOCK_T> bool send(SOCK_T &, payload const &);
+template <class SOCK_T>
+bool send(SOCK_T &, payload const &);
 
 template <class SOCK_T>
-data_type on_recv(SOCK_T &, std::string & id_str, std::string & value);
+payload on_recv(SOCK_T &);
+
+data_type extract(payload const &, std::string & id_str, std::string & value);
 
 
 
 } // string
 } // protocol
 } // common
+
+
+#include "string.ipp"
 
 
 #endif  // COMMON_PROTOCOL_STRING_HH_INCLUDED

@@ -12,10 +12,17 @@ namespace packet
 
 
 template <class SOCK_T>
-bool set_protocol(SOCK_T & sock)
+bool set_protocol_to_packet(SOCK_T & sock)
 {
 	return (sock.send(magic_string_for_packet_mode,
-	                  std::strlen(magic_string_for_packet_mode)));
+	                  std::strlen(magic_string_for_packet_mode) + 1));
+}
+
+template <class SOCK_T>
+bool set_protocol_to_string(SOCK_T & sock)
+{
+	return (sock.send(magic_string_for_string_mode,
+	                  std::strlen(magic_string_for_string_mode) + 1));
 }
 
 template <class SOCK_T>

@@ -21,29 +21,20 @@ namespace packet
 
 
 extern char const magic_string_for_packet_mode[];
+extern char const magic_string_for_string_mode[];
 
 /** called by client : set protocol with spion server to packet mode
  *  this operation is definitive
  *  affect only this particular client,
  *   it will not change setting for other clients.
  */
-template <class SOCK_T> bool set_protocol(SOCK_T &);
+template <class SOCK_T> bool set_protocol_to_packet(SOCK_T &);
+template <class SOCK_T> bool set_protocol_to_string(SOCK_T &);
 
 
 
 using id_t = std::uint16_t;
 
-
-struct double_data
-{
-	static constexpr double precision = 10000.0;
-
-	double_data(double v);
-	double as_double() const;
-
-	std::int32_t significant_part;
-	std::int32_t exponant_part;
-};
 
 
 struct header_data
@@ -58,7 +49,20 @@ struct header_data
 };
 
 
+
 using payload = std::vector<char>;
+struct double_payload_encoder
+{
+	static constexpr double precision = 10000.0;
+
+	double_payload_encoder(double v);
+	double as_double() const;
+
+	std::int32_t significant_part;
+	std::int32_t exponant_part;
+};
+
+
 
 payload make(id_t, int);
 payload make(id_t, unsigned int);
@@ -67,9 +71,11 @@ payload make(id_t, char const *);
 payload make(id_t, void const *, std::size_t);
 
 
-template <class SOCK_T> bool send(SOCK_T &, payload const &);
+template <class SOCK_T>
+bool send(SOCK_T &, payload const &);
 
-template <class SOCK_T> header_data const * on_recv(SOCK_T &, payload & payload, void const ** data);
+template <class SOCK_T>
+header_data const * on_recv(SOCK_T &, payload & payload, void const ** data);
 
 
 

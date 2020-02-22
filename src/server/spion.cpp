@@ -5,13 +5,16 @@
 #include "common/net/poller.hh"
 #include "common/net/socket.hh"
 
-#include "common/protocol/packet.hh"
+#include "common/protocol/string.hh"
 #include "common/protocol/types.hh"
 
 
 #include <vector>
 #include <list>
 #include <map>
+#include <string>
+
+#include <algorithm>
 
 #include <thread>
 #include <mutex>
@@ -21,130 +24,8 @@
 
 
 ////////////////////////////////////////////////////////////////////////////////
-//                              id_generator<T>                               //
-////////////////////////////////////////////////////////////////////////////////
-
-
-
-template <class T>
-class id_generator
-{
-public:
-	id_generator()  = default;
-	~id_generator() = default;
-
-	T next() { return (++_last); }
-
-private:
-	id_generator(id_generator<T> const &)                = delete;
-	id_generator(id_generator<T> &&)                     = delete;
-	id_generator<T> & operator=(id_generator<T> const &) = delete;
-	id_generator<T> & operator=(id_generator<T> &&)      = delete;
-
-	T _last = (T)(0);
-};
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//                                    dico                                    //
-////////////////////////////////////////////////////////////////////////////////
-
-
-
-class dico
-{
-public:
-	using id_t = common::protocol::id_t;
-
-	dico()  = default;
-	~dico() = default;
-
-	std::pair<id_t, bool> find(char const * str);
-
-private:
-	dico(dico const &)             = delete;
-	dico(dico &&)                  = delete;
-	dico & operator=(dico const &) = delete;
-	dico & operator=(dico &&)      = delete;
-
-	id_generator<id_t> _id_gen;
-	std::map<std::string, id_t> _dico;
-};
-
-
-std::pair<dico::id_t, bool> dico::find(char const * str)
-{
-	auto found = _dico.find(str);
-	if (found == _dico.end()) {
-		id_t tmp = _id_gen.next();
-		_dico.insert(std::pair(str, tmp));
-		return (std::pair<id_t, bool>(tmp, false));
-	}
-	return (std::pair<id_t, bool>(found->second, true));
-}
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//                                  message                                   //
-////////////////////////////////////////////////////////////////////////////////
-
-
-
-struct message
-{
-	union data_t
-	{
-		std::int32_t i;
-		std::uint32_t ui;
-		double d;
-	};
-
-	message(char const * id_str, int);
-	message(char const * id_str, double);
-	message(char const * id_str, unsigned int);
-	message(char const * id_str, char const *);
-	message(char const * id_str, void const *, std::size_t size);
-
-	common::protocol::data_type type;
-	std::string id_str;
-	data_t data;
-	std::vector<char> str_or_blob;
-};
-
-
-
-////////////////////////////////////////////////////////////////////////////////
 //                                SpionServer                                 //
 ////////////////////////////////////////////////////////////////////////////////
-
-class SpionClient
-{
-public:
-	enum Protocol { String = 0, Packet = 1 };
-
-	SpionClient()                           = default;
-	SpionClient(SpionClient &&)             = default;
-	~SpionClient()                          = default;
-	SpionClient & operator=(SpionClient &&) = default;
-
-	explicit SpionClient(common::net::socket &&);
-
-	bool operator==(SpionClient const &) const;
-	bool operator!=(SpionClient const &) const;
-
-	bool send(message const &)
-	message on_recv();
-
-private:	
-	SpionClient(SpionClient const &) = default;
-	SpionClient & operator=(SpionClient const &) = default;
-
-	common::net::socket _socket;
-	Protocol _protocol = Protocol::String;
-};
-
 
 
 class SpionServer
@@ -156,7 +37,7 @@ public:
 	bool init(unsigned short port_number);
 	void clean();
 
-	void send(message &&);
+	void send(std::string const &);
 
 private:
 	SpionServer(SpionServer const &)             = delete;
@@ -165,38 +46,90 @@ private:
 	SpionServer & operator=(SpionServer &&)      = delete;
 
 	common::net::listener  _listener;
-	std::list<SpionCLient> _clients;
 	common::net::poller    _poller;
 
-	dico                   _dico;
+	std::list<common::net::socket> _clients;
 
-	std::thread            _th;
+	std::thread _th;
+	std::mutex  _mtx;
 
 	static void thread_fct(SpionServer *);
+
+	void on_new_client(common::net::socket &&);
+	void on_client_wake(common::net::socket_handler_t);
 };
 
 
 bool SpionServer::init(unsigned short port_number)
 {
+	_listener.init(port_number);
+	_poller.add(_listener);
+
 	_th = std::thread(SpionServer::thread_fct, this);
-	_th.detach();
 
 	return (true);
 }
 
 void SpionServer::clean()
-{}
-
-void SpionServer::send(message && msg)
 {
-	message _msg(msg);
+	std::lock_guard<std::mutex> lck(_mtx);
 
 	for (auto it = _clients.begin(); it != _clients.end(); ++it)
-		it->send(_msg);
+		it->close();
+	_listener.close();
+
+	_th.join();
+}
+
+void SpionServer::send(std::string const & str)
+{
+	std::lock_guard<std::mutex> lck(_mtx);
+
+	auto payload = common::protocol::string::make("_", str.c_str());
+
+	for (auto it = _clients.begin(); it != _clients.end(); ++it)
+		common::protocol::string::send(*it, payload);
+}
+
+void SpionServer::on_new_client(common::net::socket && s)
+{
+	_clients.emplace_back(std::move(s));
+	_poller.add(_clients.back());
+}
+
+void SpionServer::on_client_wake(common::net::socket_handler_t s)
+{
+	auto found = std::find(_clients.begin(), _clients.end(), s);
+	if (found == _clients.end())
+		return ;
+	_poller.remove(*found);
+	_clients.erase(found);
 }
 
 void SpionServer::thread_fct(SpionServer * self)
-{}
+{
+
+	for (;;)
+	{
+		auto tmp = self->_poller.poll(std::chrono::milliseconds(100));
+
+		{
+			std::lock_guard<std::mutex> lck(self->_mtx);
+
+			if (self->_listener.is_ok() == false)
+				return ;
+
+			for (auto it = tmp.begin(); it != tmp.end(); ++it)
+				if (self->_listener == *it)
+					self->on_new_client(self->_listener.accept());
+				else
+					self->on_client_wake(*it);
+
+		} // mutex
+
+	} // threadl loop
+
+}
 
 
 
@@ -234,44 +167,7 @@ void spion::clean()
 
 
 
-void spion::send_ro(char const * str_id, int value)
+void spion::send_ro(char const * str)
 {
-	_static_spion_server().send(message(str_id, value));
+	_static_spion_server().send(str);
 }
-
-void spion::send_ro(char const * str_id, double value)
-{
-	_static_spion_server().send(message(str_id, value));
-}
-
-void spion::send_ro(char const * str_id, unsigned int value)
-{
-	_static_spion_server().send(message(str_id, value));
-}
-
-void spion::send_ro(char const * str_id, char const * value)
-{
-	_static_spion_server().send(message(str_id, value));
-}
-
-void spion::send_ro(char const * str_id, void const * blob, std::size_t size)
-{
-	_static_spion_server().send(message(str_id, blob, size));
-}
-
-
-
-void spion::send_rw(char const *, int &)
-{}
-
-void spion::send_rw(char const *, double &)
-{}
-
-void spion::send_rw(char const *, unsigned int &)
-{}
-
-void spion::send_rw(char const *, char *)
-{}
-
-void spion::send_rw(char const *, void *, std::size_t)
-{}

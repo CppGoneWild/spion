@@ -46,6 +46,15 @@ static void _init_addr_info(struct addrinfo & to_init)
 */
 
 
+bool common::net::listener::operator==(socket_handler_t const & oth) const
+{
+	return (handler() == oth);
+}
+
+bool common::net::listener::operator!=(socket_handler_t const & oth) const
+{
+	return (handler() != oth);
+}
 
 bool common::net::listener::operator==(socket const & oth) const
 {
