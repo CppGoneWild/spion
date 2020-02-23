@@ -23,19 +23,6 @@ void spion::clean()
 }
 
 
-
-void spion::send_ro(char const * str)
-{
-	_static_spion_server().send(str);
-}
-
-void spion::send_ro(std::string const & str)
-{
-	_static_spion_server().send(str);
-}
-
-
-
 void spion::send_ro(const char * id_str, int value)
 {
 	_static_spion_server().send(id_str, value);	

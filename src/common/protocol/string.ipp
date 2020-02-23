@@ -13,7 +13,11 @@ bool send(SOCK_T & sock, payload const & str)
 	return (sock.send(str.c_str(), str.size() + 1));
 }
 
-
+static inline bool is_telnet_end(std::string const & str)
+{
+	auto found = str.find("\r\n");
+	return (found != std::string::npos);
+}
 
 template <class SOCK_T>
 payload on_recv(SOCK_T & sock)
@@ -28,15 +32,13 @@ payload on_recv(SOCK_T & sock)
 	{
 		red = sock.recv(buffer, read_size);
 
-		// error
 		if (red <= 0)
-			break;
+			break; // error or disconnection
 
 		buffer[red] = '\0';
 		tmp += buffer;
 
-		// end
-		if (buffer[red - 1] == '\0')
+		if (is_telnet_end(tmp))
 			break;
 	}
 

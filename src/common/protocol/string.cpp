@@ -28,14 +28,14 @@ static common::protocol::data_type from_string(std::string const & str)
 	return (common::protocol::data_type::_None);
 }
 
-static common::protocol::string::payload _make(common::protocol::data_type type,
+static common::protocol::string::payload _make(const char * type_str,
                                                const char * id_str,
                                                std::string const & value)
 {
 	common::protocol::string::payload str;
 
 	str += "(";
-	str += to_string(type);
+	str += type_str;
 	str += ") [";
 	str += id_str;
 	str += "] =";
@@ -50,20 +50,25 @@ static common::protocol::string::payload _make(common::protocol::data_type type,
 
 common::protocol::string::payload common::protocol::string::make(const char * id_str, int value)
 {
-	return (_make(data_type::_Int, id_str, std::to_string(value)));
+	return (_make(to_string(data_type::_Int).c_str(), id_str, std::to_string(value)));
 }
 
 common::protocol::string::payload common::protocol::string::make(const char * id_str, unsigned int value)
 {
-	return (_make(data_type::_UInt, id_str, std::to_string(value)));
+	return (_make(to_string(data_type::_UInt).c_str(), id_str, std::to_string(value)));
 }
 
 common::protocol::string::payload common::protocol::string::make(const char * id_str, double value)
 {
-	return (_make(data_type::_Double, id_str, std::to_string(value)));
+	return (_make(to_string(data_type::_Double).c_str(), id_str, std::to_string(value)));
 }
 
 common::protocol::string::payload common::protocol::string::make(const char * id_str, char const * value)
 {
-	return (_make(data_type::_String, id_str, std::string(value)));
+	return (_make(to_string(data_type::_String).c_str(), id_str, std::string(value)));
+}
+
+common::protocol::string::payload common::protocol::string::make(const char * type_str, const char * id_str, const char * str)
+{
+	return (_make(type_str, id_str, str));
 }

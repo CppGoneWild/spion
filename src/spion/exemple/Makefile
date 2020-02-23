@@ -21,8 +21,9 @@ SRC_NET =  ../../common/net/listener.cpp \
 SRC_PROTOCOL =  ../../common/protocol/packet.cpp \
                 ../../common/protocol/string.cpp
 
-SRC_SPION =  ../spion.cpp \
-             ../Server.cpp
+SRC_SPION =  ../Client.cpp \
+             ../Server.cpp \
+             ../spion.cpp
 
 SRC = $(SRC_IMGUI) $(SRC_LOGG) $(SRC_NET) $(SRC_PROTOCOL) $(SRC_SPION) main.cpp
 

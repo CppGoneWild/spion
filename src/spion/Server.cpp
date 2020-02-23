@@ -1,6 +1,5 @@
 #include "Server.hh"
 
-#include "common/protocol/string.hh"
 #include "common/protocol/types.hh"
 
 #include <algorithm>
@@ -34,55 +33,31 @@ void spion::Server::clean()
 	_th.join();
 }
 
-
-
-void spion::Server::send(std::string const & str)
-{
-	std::lock_guard<std::mutex> lck(_mtx);
-
-	for (auto it = _clients.begin(); it != _clients.end(); ++it)
-		common::protocol::string::send(*it, str);
-}
-
-
 void spion::Server::send(const char * id_str, int value)
 {
-	std::lock_guard<std::mutex> lck(_mtx);
-
-	auto payload = common::protocol::string::make(id_str, value);
-
-	for (auto it = _clients.begin(); it != _clients.end(); ++it)
-		common::protocol::string::send(*it, payload);	
+	_send(id_str, value);
 }
 
 void spion::Server::send(const char * id_str, unsigned int value)
 {
-	std::lock_guard<std::mutex> lck(_mtx);
-
-	auto payload = common::protocol::string::make(id_str, value);
-
-	for (auto it = _clients.begin(); it != _clients.end(); ++it)
-		common::protocol::string::send(*it, payload);	
+	_send(id_str, value);
 }
 
 void spion::Server::send(const char * id_str, double value)
 {
-	std::lock_guard<std::mutex> lck(_mtx);
-
-	auto payload = common::protocol::string::make(id_str, value);
-
-	for (auto it = _clients.begin(); it != _clients.end(); ++it)
-		common::protocol::string::send(*it, payload);	
+	_send(id_str, value);
 }
 
 void spion::Server::send(const char * id_str, char const * value)
 {
-	std::lock_guard<std::mutex> lck(_mtx);
-
 	auto payload = common::protocol::string::make(id_str, value);
 
-	for (auto it = _clients.begin(); it != _clients.end(); ++it)
-		common::protocol::string::send(*it, payload);	
+	{
+		std::lock_guard<std::mutex> lck(_mtx);		
+		for (auto it = _clients.begin(); it != _clients.end(); ++it)
+			if (it->is_listening_to(id_str))
+				it->send(payload);
+	}
 }
 
 
@@ -92,7 +67,9 @@ void spion::Server::send(const char * id_str, char const * value)
 void spion::Server::on_new_client(common::net::socket && s)
 {
 	_clients.emplace_back(std::move(s));
-	_poller.add(_clients.back());
+	_poller.add(_clients.back().socket());
+
+	_clients.back().send("l ID_NAME to listen to variable\r\n");
 
 	COUT_INFO << "Client connected";
 }
@@ -103,15 +80,17 @@ void spion::Server::on_client_wake(common::net::socket_handler_t s)
 	if (found == _clients.end())
 		return ;
 
-	if (found->recv(nullptr, 0) == 0) {
-		_poller.remove(*found);
+	common::protocol::string::payload payload;
+
+	if (found->recv(payload) == Client::recv_event::disconnection) {
+		_poller.remove(found->socket());
 		_clients.erase(found);
 
 		COUT_INFO << "Client disconnected";
 	}
+	else if (found->execute_remote_cmd(payload) == false)
+		COUT_INFO << payload.c_str();
 }
-
-
 
 void spion::Server::thread_fct(spion::Server * self)
 {

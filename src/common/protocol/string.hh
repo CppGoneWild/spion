@@ -25,7 +25,8 @@ payload make(const char * id_str, int);
 payload make(const char * id_str, unsigned int);
 payload make(const char * id_str, double);
 payload make(const char * id_str, char const *);
-//payload make(id_t, void const *, std::size_t);
+payload make(const char * type_str, const char * id_str, const char * str);
+
 
 template <class SOCK_T>
 bool send(SOCK_T &, payload const &);

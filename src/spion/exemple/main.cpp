@@ -16,7 +16,7 @@ int main(int, char const * const *, char const * const *)
 	// main loop
 	while (true ) {
 
-		spion::send_ro("test");
+		spion::send_ro("", "test");
 		std::this_thread::sleep_for(std::chrono::milliseconds(500));
 		spion::send_ro("test 2", 42);
 		std::this_thread::sleep_for(std::chrono::milliseconds(500));
