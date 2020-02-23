@@ -3,7 +3,7 @@
 
 
 
-#include <cstdint>
+#include <string>
 
 
 
@@ -17,6 +17,12 @@ void clean();
 
 
 void send_ro(char const *);
+void send_ro(std::string const &);
+
+void send_ro(const char * id_str, int);
+void send_ro(const char * id_str, unsigned int);
+void send_ro(const char * id_str, double);
+void send_ro(const char * id_str, char const *);
 
 
 

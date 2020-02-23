@@ -22,6 +22,8 @@
 #include <cstring>
 
 
+#include "logg.hh"
+
 
 ////////////////////////////////////////////////////////////////////////////////
 //                                SpionServer                                 //
@@ -38,6 +40,10 @@ public:
 	void clean();
 
 	void send(std::string const &);
+	void send(const char * id_str, int);
+	void send(const char * id_str, unsigned int);
+	void send(const char * id_str, double);
+	void send(const char * id_str, char const *);
 
 private:
 	SpionServer(SpionServer const &)             = delete;
@@ -62,7 +68,9 @@ private:
 
 bool SpionServer::init(unsigned short port_number)
 {
-	_listener.init(port_number);
+	if (_listener.init(port_number) == false)
+		return (false);
+
 	_poller.add(_listener);
 
 	_th = std::thread(SpionServer::thread_fct, this);
@@ -76,25 +84,73 @@ void SpionServer::clean()
 
 	for (auto it = _clients.begin(); it != _clients.end(); ++it)
 		it->close();
+
 	_listener.close();
 
 	_th.join();
 }
 
+
+
 void SpionServer::send(std::string const & str)
 {
 	std::lock_guard<std::mutex> lck(_mtx);
 
-	auto payload = common::protocol::string::make("_", str.c_str());
+	for (auto it = _clients.begin(); it != _clients.end(); ++it)
+		common::protocol::string::send(*it, str);
+}
+
+
+void SpionServer::send(const char * id_str, int value)
+{
+	std::lock_guard<std::mutex> lck(_mtx);
+
+	auto payload = common::protocol::string::make(id_str, value);
 
 	for (auto it = _clients.begin(); it != _clients.end(); ++it)
-		common::protocol::string::send(*it, payload);
+		common::protocol::string::send(*it, payload);	
 }
+
+void SpionServer::send(const char * id_str, unsigned int value)
+{
+	std::lock_guard<std::mutex> lck(_mtx);
+
+	auto payload = common::protocol::string::make(id_str, value);
+
+	for (auto it = _clients.begin(); it != _clients.end(); ++it)
+		common::protocol::string::send(*it, payload);	
+}
+
+void SpionServer::send(const char * id_str, double value)
+{
+	std::lock_guard<std::mutex> lck(_mtx);
+
+	auto payload = common::protocol::string::make(id_str, value);
+
+	for (auto it = _clients.begin(); it != _clients.end(); ++it)
+		common::protocol::string::send(*it, payload);	
+}
+
+void SpionServer::send(const char * id_str, char const * value)
+{
+	std::lock_guard<std::mutex> lck(_mtx);
+
+	auto payload = common::protocol::string::make(id_str, value);
+
+	for (auto it = _clients.begin(); it != _clients.end(); ++it)
+		common::protocol::string::send(*it, payload);	
+}
+
+
+
+
 
 void SpionServer::on_new_client(common::net::socket && s)
 {
 	_clients.emplace_back(std::move(s));
 	_poller.add(_clients.back());
+
+	COUT_INFO << "Client connected";
 }
 
 void SpionServer::on_client_wake(common::net::socket_handler_t s)
@@ -102,9 +158,16 @@ void SpionServer::on_client_wake(common::net::socket_handler_t s)
 	auto found = std::find(_clients.begin(), _clients.end(), s);
 	if (found == _clients.end())
 		return ;
-	_poller.remove(*found);
-	_clients.erase(found);
+
+	if (found->recv(nullptr, 0) == 0) {
+		_poller.remove(*found);
+		_clients.erase(found);
+
+		COUT_INFO << "Client disconnected";
+	}
 }
+
+
 
 void SpionServer::thread_fct(SpionServer * self)
 {
@@ -171,3 +234,31 @@ void spion::send_ro(char const * str)
 {
 	_static_spion_server().send(str);
 }
+
+void spion::send_ro(std::string const & str)
+{
+	_static_spion_server().send(str);
+}
+
+
+
+void spion::send_ro(const char * id_str, int value)
+{
+	_static_spion_server().send(id_str, value);	
+}
+
+void spion::send_ro(const char * id_str, unsigned int value)
+{
+	_static_spion_server().send(id_str, value);	
+}
+
+void spion::send_ro(const char * id_str, double value)
+{
+	_static_spion_server().send(id_str, value);	
+}
+
+void spion::send_ro(const char * id_str, char const * value)
+{
+	_static_spion_server().send(id_str, value);	
+}
+
