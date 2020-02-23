@@ -45,8 +45,10 @@ spion::Client::operator bool () const
 
 bool spion::Client::is_listening_to(const char * str_id)
 {
-	auto found = std::find(_listening_id.cbegin(), _listening_id.cend(), str_id);
-	return (found != _listening_id.cend());
+	for (auto it = _listening_id.cbegin(); it != _listening_id.cend(); ++it)
+		if (std::regex_search(str_id, *it))
+			return (true);
+	return (false);
 }
 
 bool spion::Client::send(common::protocol::string::payload const & payload)
@@ -82,7 +84,7 @@ bool spion::Client::execute_remote_cmd(std::string const & cmd)
 			return (false);
 
 		auto id = cmd.substr(found + std::strlen("l "));
-		this->_listening_id.push_back(id);
+		this->_listening_id.push_back(std::regex(id));
 
 		COUT_INFO << "Listen to " << id;
 

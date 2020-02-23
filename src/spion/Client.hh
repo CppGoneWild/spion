@@ -7,6 +7,7 @@
 #include "common/protocol/string.hh"
 
 #include <list>
+#include <regex>
 
 
 namespace spion
@@ -54,7 +55,7 @@ private:
 	common::net::socket _socket;
 	common::protocol::string::payload _buffer;
 
-	std::list<std::string> _listening_id;
+	std::list<std::regex> _listening_id;
 };
 
 
