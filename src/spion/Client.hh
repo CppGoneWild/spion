@@ -40,6 +40,7 @@ public:
 	bool send(common::protocol::payload const &);
 
 
+	recv_event on_recv();
 	recv_event recv(std::string &);
 	bool execute_remote_cmd(std::string const &);
 

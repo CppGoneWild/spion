@@ -109,16 +109,10 @@ void spion::Server::on_client_wake(common::net::socket_handler_t s)
 	if (found == _clients.end())
 		return ;
 
-	std::string payload;
-
-	if (found->recv(payload) == Client::recv_event::disconnection) {
+	if (found->on_recv() == Client::recv_event::disconnection) {
 		_poller.remove(found->socket());
 		_clients.erase(found);
-
-		COUT_INFO << "Client disconnected";
 	}
-	else if (found->execute_remote_cmd(payload) == false)
-		COUT_INFO << payload.c_str();
 }
 
 void spion::Server::_send(char const * id_str, common::protocol::payload const & payload)

