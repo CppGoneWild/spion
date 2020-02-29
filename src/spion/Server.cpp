@@ -96,7 +96,9 @@ void spion::Server::on_new_client(common::net::socket && s)
 	_clients.emplace_back(std::move(s));
 	_poller.add(_clients.back().socket());
 
-	_clients.back().send("l ID_NAME to listen to variable\r\n");
+	auto tmp = common::protocol::string::make("l ID_NAME to listen to variable");
+
+	_clients.back().send(tmp);
 
 	COUT_INFO << "Client connected";
 }
@@ -107,19 +109,15 @@ void spion::Server::on_client_wake(common::net::socket_handler_t s)
 	if (found == _clients.end())
 		return ;
 
-	common::protocol::string::payload payload;
-
-	if (found->recv(payload) == Client::recv_event::disconnection) {
+	if (found->on_recv() == Client::recv_event::disconnection) {
 		_poller.remove(found->socket());
 		_clients.erase(found);
 
 		COUT_INFO << "Client disconnected";
 	}
-	else if (found->execute_remote_cmd(payload) == false)
-		COUT_INFO << payload.c_str();
 }
 
-void spion::Server::_send(char const * id_str, common::protocol::string::payload const & payload)
+void spion::Server::_send(char const * id_str, common::protocol::payload const & payload)
 {
 	std::lock_guard<std::mutex> lck(_mtx);
 	for (auto it = _clients.begin(); it != _clients.end(); ++it)

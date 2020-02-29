@@ -51,26 +51,25 @@ bool spion::Client::is_listening_to(const char * str_id)
 	return (false);
 }
 
-bool spion::Client::send(common::protocol::string::payload const & payload)
+bool spion::Client::send(common::protocol::payload const & payload)
 {
-	return (common::protocol::string::send(_socket, payload));
+	return (common::protocol::send(_socket, payload));
 }
 
-spion::Client::recv_event spion::Client::recv(common::protocol::string::payload & result)
+spion::Client::recv_event spion::Client::on_recv()
 {
-	_buffer += common::protocol::string::on_recv(_socket);
+	std::string received = common::protocol::string::on_recv(_socket, _buffer);
 
-	if (_buffer.empty())
+	if (received.empty())
 		return(recv_event::disconnection);
 
-	auto found = _buffer.find("\r\n");
-	if (found != std::string::npos) {
-		result = _buffer.substr(0, found);
-		_buffer.erase(0, result.size() + 2);
-	}
-	else {
-		result = std::move(_buffer);
-	}
+	do
+	{
+		if (execute_remote_cmd(received) == false)
+			COUT_INFO << received;
+
+		received = common::protocol::string::extract_telnet_string(_buffer);
+	} while (received.empty() == false);
 
 	return(recv_event::payload);
 }

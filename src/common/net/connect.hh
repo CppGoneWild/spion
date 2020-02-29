@@ -1,3 +1,4 @@
+/*
 #ifndef COMMON_NET_CONNECT_HH_INCLUDED
 #define COMMON_NET_CONNECT_HH_INCLUDED
 
@@ -27,3 +28,4 @@ socket connect(char const * addr, port_t port);
 
 
 #endif  // COMMON_NET_CONNECT_HH_INCLUDED
+*/

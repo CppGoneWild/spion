@@ -1,3 +1,4 @@
+/*
 #include "connect.hh"
 #include "scoped_addrinfo.hh"
 
@@ -68,3 +69,4 @@ common::net::socket common::net::connect(char const * addr, port_t port)
 
 	return (common::net::socket());
 }
+*/

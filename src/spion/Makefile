@@ -6,7 +6,8 @@ SRC_NET =  ../common/net/listener.cpp ../common/net/listener.hh \
            ../common/net/socket.cpp ../common/net/socket.hh \
            ../common/net/types.hh
 
-SRC_PROTOCOL =  ../common/protocol/packet.cpp ../common/protocol/packet.hh
+SRC_PROTOCOL =  ../common/protocol/string.cpp ../common/protocol/string.hh ../common/protocol/string.ipp \
+                ../common/protocol/types.hh
 
 SRC =  Client.cpp Client.hh \
        Server.cpp Server.h \
