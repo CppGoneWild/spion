@@ -7,41 +7,6 @@
 
 
 
-
-/*
-                  _             __                       ____
-            _____(_)___  ____ _/ /__        ____  ____  / / /__  _____
-           / ___/ / __ \/ __ `/ / _ \      / __ \/ __ \/ / / _ \/ ___/
-          (__  ) / / / / /_/ / /  __/     / /_/ / /_/ / / /  __/ /
-         /____/_/_/ /_/\__, /_/\___/_____/ .___/\____/_/_/\___/_/
-                      /____/      /_____/_/
-*/
-
-
-
-void common::net::single_poller::set(socket & s)
-{
-	_pollfd.fd = s.handler();
-	_pollfd.events = POLLIN;
-}
-
-void common::net::single_poller::unset()
-{
-	_pollfd.fd = not_a_socket;
-	_pollfd.events = POLLIN;
-}
-
-bool common::net::single_poller::poll(std::chrono::milliseconds time)
-{
-	assert(_pollfd.fd != not_a_socket);
-
-	const int num_events = ::poll(&_pollfd, 1, time.count());
-
-	return (num_events >= 1);
-}
-
-
-
 /*
                                       ____
                          ____  ____  / / /__  _____
