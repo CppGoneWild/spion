@@ -53,17 +53,15 @@ bool spion::Client::is_listening_to(const char * str_id)
 
 bool spion::Client::send(common::protocol::payload const & payload)
 {
-	return (common::protocol::string::send(_socket, payload));
+	return (common::protocol::send(_socket, payload));
 }
 
 spion::Client::recv_event spion::Client::on_recv()
 {
 	std::string received;
-
 	recv_event result = recv(received);
 
-	if (result == recv_event::payload)
-	{
+	if (result == recv_event::payload) {
 		if (execute_remote_cmd(received) == false)
 			COUT_INFO << received;
 	}
@@ -73,10 +71,7 @@ spion::Client::recv_event spion::Client::on_recv()
 
 spion::Client::recv_event spion::Client::recv(std::string & result)
 {
-	auto tmp = common::protocol::string::on_recv(_socket);
-	tmp.push_back('\0');
-
-	_buffer += tmp.data();
+	_buffer += common::protocol::string::on_recv(_socket);
 
 	if (_buffer.empty())
 		return(recv_event::disconnection);

@@ -7,12 +7,6 @@ namespace string
 
 
 
-template <class SOCK_T>
-bool send(SOCK_T & sock, payload const & payload)
-{
-	return (sock.send(payload.data(), payload.size()));
-}
-
 static inline bool is_telnet_end(std::string const & str)
 {
 	auto found = str.find("\r\n");
@@ -20,7 +14,7 @@ static inline bool is_telnet_end(std::string const & str)
 }
 
 template <class SOCK_T>
-payload on_recv(SOCK_T & sock)
+std::string on_recv(SOCK_T & sock)
 {
 	static constexpr int read_size = 128;
 
@@ -42,8 +36,7 @@ payload on_recv(SOCK_T & sock)
 			break;
 	}
 
-	payload res(tmp.begin(), tmp.end());
-	return (res);
+	return (tmp);
 }
 
 

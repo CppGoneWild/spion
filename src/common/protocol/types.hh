@@ -18,6 +18,14 @@ using payload = std::vector<char>;
 
 
 
+template <class SOCK_T>
+bool send(SOCK_T & sock, payload const & payload)
+{
+	return (sock.send(payload.data(), payload.size()));
+}
+
+
+
 } // protocol
 } // common
 

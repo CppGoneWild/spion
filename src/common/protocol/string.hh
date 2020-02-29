@@ -27,12 +27,9 @@ payload make(const char * str);
 
 
 template <class SOCK_T>
-bool send(SOCK_T &, payload const &);
+std::string on_recv(SOCK_T &);
 
-template <class SOCK_T>
-payload on_recv(SOCK_T &);
-
-std::string extract(payload const &, std::string & value);
+// std::string extract(payload const &, std::string & value);
 
 
 
