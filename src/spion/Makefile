@@ -8,7 +8,9 @@ SRC_NET =  ../common/net/listener.cpp ../common/net/listener.hh \
 
 SRC_PROTOCOL =  ../common/protocol/packet.cpp ../common/protocol/packet.hh
 
-SRC = spion.cpp spion.hh
+SRC =  Client.cpp Client.hh \
+       Server.cpp Server.h \
+       spion.cpp spion.hh
 
 all : $(NAME)
 
