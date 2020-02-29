@@ -57,7 +57,7 @@ private:
 	void on_new_client(common::net::socket &&);
 	void on_client_wake(common::net::socket_handler_t);
 
-	void _send(char const *, common::protocol::string::payload const &);
+	void _send(char const *, common::protocol::payload const &);
 };
 
 

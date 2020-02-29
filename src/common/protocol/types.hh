@@ -3,8 +3,7 @@
 
 
 
-#include <cstdint>
-
+#include <vector>
 
 
 
@@ -15,7 +14,7 @@ namespace protocol
 
 
 
-enum class data_type : std::uint8_t
+using payload = std::vector<char>;
 
 
 

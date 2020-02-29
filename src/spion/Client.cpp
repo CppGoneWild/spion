@@ -51,14 +51,17 @@ bool spion::Client::is_listening_to(const char * str_id)
 	return (false);
 }
 
-bool spion::Client::send(common::protocol::string::payload const & payload)
+bool spion::Client::send(common::protocol::payload const & payload)
 {
 	return (common::protocol::string::send(_socket, payload));
 }
 
-spion::Client::recv_event spion::Client::recv(common::protocol::string::payload & result)
+spion::Client::recv_event spion::Client::recv(std::string & result)
 {
-	_buffer += common::protocol::string::on_recv(_socket);
+	auto tmp = common::protocol::string::on_recv(_socket);
+	tmp.push_back('\0');
+
+	_buffer += tmp.data();
 
 	if (_buffer.empty())
 		return(recv_event::disconnection);

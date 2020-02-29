@@ -8,9 +8,9 @@ namespace string
 
 
 template <class SOCK_T>
-bool send(SOCK_T & sock, payload const & str)
+bool send(SOCK_T & sock, payload const & payload)
 {
-	return (sock.send(str.c_str(), str.size() + 1));
+	return (sock.send(payload.data(), payload.size()));
 }
 
 static inline bool is_telnet_end(std::string const & str)
@@ -26,7 +26,7 @@ payload on_recv(SOCK_T & sock)
 
 	char buffer[read_size + 1];
 	int red;
-	payload tmp;
+	std::string tmp;
 
 	for (;;)
 	{
@@ -42,16 +42,16 @@ payload on_recv(SOCK_T & sock)
 			break;
 	}
 
-	return (tmp);
+	payload res(tmp.begin(), tmp.end());
+	return (res);
 }
 
 
 
-
+/*
 template <class SOCK_T>
-data_type extract(payload const & payload,
-                  std::string & id_str,
-                  std::string & value)
+std::string extract(payload const & payload,
+                    std::string & value)
 {
 	std::size_t tk_start = std::string::npos;
 	std::size_t tk_end   = std::string::npos;
@@ -67,13 +67,9 @@ data_type extract(payload const & payload,
 	};
 
 
-	data_type type = common::protocol::data_type::_None;
 	id_str.clear();
 	value.clear();
 
-
-	// extract token
-	type = from_string(_extract_and_advance('(', ')'));
 
 	// extract id
 	id_str = _extract_and_advance('[', ']');
@@ -85,9 +81,9 @@ data_type extract(payload const & payload,
 	else
 		value = payload.substr((tk_end == std::string::npos ? 0 : tk_end + 1));
 
-	return (type);
+	return (id_str);
 }
-
+*/
 
 
 } // string

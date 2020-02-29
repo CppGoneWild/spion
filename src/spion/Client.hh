@@ -37,10 +37,10 @@ public:
 	operator bool () const;
 
 	bool is_listening_to(const char * str_id);
-	bool send(common::protocol::string::payload const &);
+	bool send(common::protocol::payload const &);
 
 
-	recv_event recv(common::protocol::string::payload &);
+	recv_event recv(std::string &);
 	bool execute_remote_cmd(std::string const &);
 
 	void close();
@@ -53,7 +53,7 @@ private:
 	Client & operator=(Client const &) = delete;
 
 	common::net::socket _socket;
-	common::protocol::string::payload _buffer;
+	std::string _buffer;
 
 	std::list<std::regex> _listening_id;
 };
