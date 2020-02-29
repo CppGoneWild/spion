@@ -96,7 +96,7 @@ void spion::Server::on_new_client(common::net::socket && s)
 	_clients.emplace_back(std::move(s));
 	_poller.add(_clients.back().socket());
 
-	auto tmp = common::protocol::string::make("l ID_NAME to listen to variable\r\n");
+	auto tmp = common::protocol::string::make("l ID_NAME to listen to variable");
 
 	_clients.back().send(tmp);
 
@@ -112,6 +112,8 @@ void spion::Server::on_client_wake(common::net::socket_handler_t s)
 	if (found->on_recv() == Client::recv_event::disconnection) {
 		_poller.remove(found->socket());
 		_clients.erase(found);
+
+		COUT_INFO << "Client disconnected";
 	}
 }
 
