@@ -35,32 +35,59 @@ void spion::Server::clean()
 
 void spion::Server::send(const char * id_str, int value)
 {
-	_send(id_str, value);
+	auto payload = common::protocol::string::make(id_str, value);
+
+	_send(id_str, payload);
 }
 
 void spion::Server::send(const char * id_str, unsigned int value)
 {
-	_send(id_str, value);
+	auto payload = common::protocol::string::make(id_str, value);
+
+	_send(id_str, payload);
 }
 
 void spion::Server::send(const char * id_str, double value)
 {
-	_send(id_str, value);
+	auto payload = common::protocol::string::make(id_str, value);
+
+	_send(id_str, payload);
 }
 
 void spion::Server::send(const char * id_str, char const * value)
 {
 	auto payload = common::protocol::string::make(id_str, value);
 
-	{
-		std::lock_guard<std::mutex> lck(_mtx);		
-		for (auto it = _clients.begin(); it != _clients.end(); ++it)
-			if (it->is_listening_to(id_str))
-				it->send(payload);
-	}
+	_send(id_str, payload);
 }
 
 
+
+void spion::Server::thread_fct(spion::Server * self)
+{
+	while (self->_thread_fct()) ;
+}
+
+bool spion::Server::_thread_fct()
+{
+	auto tmp = _poller.poll(std::chrono::milliseconds(100));
+
+	{
+		std::lock_guard<std::mutex> lck(_mtx);
+
+		if (_listener.is_ok() == false)
+			return (false);
+
+		for (auto it = tmp.begin(); it != tmp.end(); ++it)
+			if (_listener == *it)
+				on_new_client(_listener.accept());
+			else
+				on_client_wake(*it);
+
+	} // mutex
+
+	return (true);
+}
 
 
 
@@ -92,29 +119,10 @@ void spion::Server::on_client_wake(common::net::socket_handler_t s)
 		COUT_INFO << payload.c_str();
 }
 
-void spion::Server::thread_fct(spion::Server * self)
+void spion::Server::_send(char const * id_str, common::protocol::string::payload const & payload)
 {
-	while (self->_thread_fct())
-	{}
-}
-
-bool spion::Server::_thread_fct()
-{
-	auto tmp = _poller.poll(std::chrono::milliseconds(100));
-
-	{
-		std::lock_guard<std::mutex> lck(_mtx);
-
-		if (_listener.is_ok() == false)
-			return (false);
-
-		for (auto it = tmp.begin(); it != tmp.end(); ++it)
-			if (_listener == *it)
-				on_new_client(_listener.accept());
-			else
-				on_client_wake(*it);
-
-	} // mutex
-
-	return (true);
+	std::lock_guard<std::mutex> lck(_mtx);
+	for (auto it = _clients.begin(); it != _clients.end(); ++it)
+		if (it->is_listening_to(id_str))
+			it->send(payload);
 }

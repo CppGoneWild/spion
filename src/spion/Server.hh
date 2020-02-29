@@ -57,23 +57,9 @@ private:
 	void on_new_client(common::net::socket &&);
 	void on_client_wake(common::net::socket_handler_t);
 
-	template <class T>
-	void _send(const char * id_str, T value);
+	void _send(char const *, common::protocol::string::payload const &);
 };
 
-
-template <class T>
-void Server::_send(const char * id_str, T value)
-{
-	auto payload = common::protocol::string::make(id_str, value);
-
-	{
-		std::lock_guard<std::mutex> lck(_mtx);
-		for (auto it = _clients.begin(); it != _clients.end(); ++it)
-			if (it->is_listening_to(id_str))
-				it->send(payload);
-	}
-}
 
 
 } // spion
