@@ -20,8 +20,7 @@ SRC_NET =  $(SPION_ROOT_SRC_FOLDER)/../common/net/listener.cpp \
            $(SPION_ROOT_SRC_FOLDER)/../common/net/scoped_addrinfo.cpp \
            $(SPION_ROOT_SRC_FOLDER)/../common/net/socket.cpp
 
-SRC_PROTOCOL =  $(SPION_ROOT_SRC_FOLDER)/../common/protocol/packet.cpp \
-                $(SPION_ROOT_SRC_FOLDER)/../common/protocol/string.cpp
+SRC_PROTOCOL =  $(SPION_ROOT_SRC_FOLDER)/../common/protocol/string.cpp
 
 SRC_SPION =  $(SPION_ROOT_SRC_FOLDER)/Client.cpp \
              $(SPION_ROOT_SRC_FOLDER)/Server.cpp \
