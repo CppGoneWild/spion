@@ -1,7 +1,6 @@
 #include "Client.hh"
 
 #include <algorithm>
-#include <cstring>
 
 
 #include "logg.hh"
@@ -9,9 +8,21 @@
 
 spion::Client::Client(common::net::socket && socket)
 : _socket(std::move(socket)),
-  _buffer(),
+  _partial_msg_buffer(),
+  _shell(),
   _listening_id()
-{}
+{
+	std::function<void(std::vector<std::string> const &)> read_cmd =
+	[this](std::vector<std::string> const & cmd) -> void
+	{
+		for (auto it = cmd.begin() + 1; it != cmd.end(); ++it) {
+			this->_listening_id.push_back(std::regex(*it));
+			COUT_INFO << "reading '" << *it << "'";
+		}
+	};
+
+	_shell.add_command(Shell::command { "read", "r", read_cmd } );
+}
 
 bool spion::Client::operator==(common::net::socket_handler_t oth) const
 {
@@ -58,39 +69,20 @@ bool spion::Client::send(common::protocol::payload const & payload)
 
 spion::Client::recv_event spion::Client::on_recv()
 {
-	std::string received = common::protocol::string::on_recv(_socket, _buffer);
+	std::string received = common::protocol::string::on_recv(_socket, _partial_msg_buffer);
 
 	if (received.empty())
 		return(recv_event::disconnection);
 
 	do
 	{
-		if (execute_remote_cmd(received) == false)
+		if (_shell.exec(received) == false)
 			COUT_INFO << received;
 
-		received = common::protocol::string::extract_telnet_string(_buffer);
+		received = common::protocol::string::extract_telnet_string(_partial_msg_buffer);
 	} while (received.empty() == false);
 
 	return(recv_event::payload);
-}
-
-bool spion::Client::execute_remote_cmd(std::string const & cmd)
-{
-	auto listen_cmd = [this](std::string const & cmd) -> bool
-	{
-		auto found = cmd.find("l ");
-		if (found == std::string::npos)
-			return (false);
-
-		auto id = cmd.substr(found + std::strlen("l "));
-		this->_listening_id.push_back(std::regex(id));
-
-		COUT_INFO << "Listen to " << id;
-
-		return (true);
-	};
-
-	return (listen_cmd(cmd));
 }
 
 void spion::Client::close()

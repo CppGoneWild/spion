@@ -6,6 +6,8 @@
 #include "common/net/socket.hh"
 #include "common/protocol/string.hh"
 
+#include "Shell.hh"
+
 #include <list>
 #include <regex>
 
@@ -41,7 +43,6 @@ public:
 
 
 	recv_event on_recv();
-	bool execute_remote_cmd(std::string const &);
 
 	void close();
 
@@ -53,7 +54,8 @@ private:
 	Client & operator=(Client const &) = delete;
 
 	common::net::socket _socket;
-	std::string _buffer;
+	std::string _partial_msg_buffer;
+	Shell _shell;
 
 	std::list<std::regex> _listening_id;
 };

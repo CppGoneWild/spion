@@ -24,6 +24,7 @@ SRC_PROTOCOL =  $(SPION_ROOT_SRC_FOLDER)/../common/protocol/string.cpp
 
 SRC_SPION =  $(SPION_ROOT_SRC_FOLDER)/Client.cpp \
              $(SPION_ROOT_SRC_FOLDER)/Server.cpp \
+             $(SPION_ROOT_SRC_FOLDER)/Shell.cpp \
              $(SPION_ROOT_SRC_FOLDER)/spion.cpp
 
 SRC = $(SRC_LOGG) $(SRC_NET) $(SRC_PROTOCOL) $(SRC_SPION) main.cpp

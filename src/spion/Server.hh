@@ -10,6 +10,7 @@
 #include "common/protocol/string.hh"
 
 #include "Client.hh"
+//#include "Dictionary.hh"
 
 #include <list>
 #include <string>
@@ -47,6 +48,7 @@ private:
 	common::net::poller    _poller;
 
 	std::list<Client> _clients;
+//	Dictionary _dico;
 
 	std::thread _th;
 	std::mutex  _mtx;
