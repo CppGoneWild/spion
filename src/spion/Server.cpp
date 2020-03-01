@@ -96,33 +96,27 @@ void spion::Server::send_ro(const char * id_str, char const * value)
 void spion::Server::send_rw(const char * id_str, int & value)
 {
 	std::lock_guard<std::mutex> lck(_mtx);
-	if (had_to_write(id_str, value))
-		return;
 
+	had_to_write(id_str, value);
 	auto payload = common::protocol::string::make(id_str, value);
-
 	_send(id_str, payload);
 }
 
 void spion::Server::send_rw(const char * id_str, unsigned int & value)
 {
 	std::lock_guard<std::mutex> lck(_mtx);
-	if (had_to_write(id_str, value))
-		return;
 
+	had_to_write(id_str, value);
 	auto payload = common::protocol::string::make(id_str, value);
-
 	_send(id_str, payload);
 }
 
 void spion::Server::send_rw(const char * id_str, double & value)
 {
 	std::lock_guard<std::mutex> lck(_mtx);
-	if (had_to_write(id_str, value))
-		return;
 
+	had_to_write(id_str, value);
 	auto payload = common::protocol::string::make(id_str, value);
-
 	_send(id_str, payload);
 }
 
@@ -201,8 +195,16 @@ bool spion::Server::had_to_write(const char * id_str, int & value)
 	}
 
 	if (found->second.has_data && found->second.type == bucket::type_t::data) {
-		value = std::stoi(found->second.data);
+
+		try {
+			value = std::stoi(found->second.data);
+		}
+		catch (...) {
+			COUT_ERROR << "'" << found->second.data << "' not a valid integer.";
+		}
+
 		found->second.has_data = false;
+		_send(id_str, common::protocol::string::make(id_str, value));
 		return (true);
 	}
 	return (false);
@@ -217,8 +219,16 @@ bool spion::Server::had_to_write(const char * id_str, unsigned int & value)
 	}
 
 	if (found->second.has_data && found->second.type == bucket::type_t::data) {
-		value = std::stoul(found->second.data);
+
+		try {
+			value = std::stoul(found->second.data);
+		}
+		catch (...) {
+			COUT_ERROR << "'" << found->second.data << "' not a valid unsigned integer.";
+		}
+
 		found->second.has_data = false;
+		_send(id_str, common::protocol::string::make(id_str, value));
 		return (true);
 	}
 	return (false);
@@ -233,8 +243,16 @@ bool spion::Server::had_to_write(const char * id_str, double & value)
 	}
 
 	if (found->second.has_data && found->second.type == bucket::type_t::data) {
-		value = std::stod(found->second.data);
+
+		try {
+			value = std::stod(found->second.data);
+		}
+		catch (...) {
+			COUT_ERROR << "'" << found->second.data << "' not a valid double.";
+		}
+
 		found->second.has_data = false;
+		_send(id_str, common::protocol::string::make(id_str, value));
 		return (true);
 	}
 	return (false);
