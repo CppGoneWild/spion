@@ -12,16 +12,22 @@ spion::Client::Client(common::net::socket && socket)
   _shell(),
   _listening_id()
 {
-	std::function<void(std::vector<std::string> const &)> read_cmd =
-	[this](std::vector<std::string> const & cmd) -> void
+	std::function<std::string(std::vector<std::string> const &)> read_cmd =
+	[this](std::vector<std::string> const & cmd) -> std::string
 	{
+		std::string res;
 		for (auto it = cmd.begin() + 1; it != cmd.end(); ++it) {
 			this->_listening_id.push_back(std::regex(*it));
-			COUT_INFO << "reading '" << *it << "'";
+			res += "Reading '" + *it + "'" + "\n";
 		}
+		return (res);
 	};
 
-	_shell.add_command(Shell::command { "read", "r", read_cmd } );
+	_shell.add_command(Shell::command { "read", "r", "Listen to a variable. Use regex.", read_cmd } );
+
+	std::string welcome_str;
+	_shell.exec({"help"}, welcome_str);
+	send(common::protocol::string::make(welcome_str.c_str()));
 }
 
 bool spion::Client::operator==(common::net::socket_handler_t oth) const
@@ -76,8 +82,11 @@ spion::Client::recv_event spion::Client::on_recv()
 
 	do
 	{
-		if (_shell.exec(received) == false)
+		std::string answer;
+		if (_shell.exec(received, answer) == false)
 			COUT_INFO << received;
+		else if (answer.empty() == false)
+			send(common::protocol::string::make(answer.c_str()));
 
 		received = common::protocol::string::extract_telnet_string(_partial_buffer);
 	} while (received.empty() == false);

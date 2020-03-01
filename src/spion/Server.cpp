@@ -96,9 +96,6 @@ void spion::Server::on_new_client(common::net::socket && s)
 	_clients.emplace_back(std::move(s));
 	_poller.add(_clients.back().socket());
 
-	auto tmp = common::protocol::string::make("l ID_NAME to listen to variable");
-
-	_clients.back().send(tmp);
 
 	COUT_INFO << "Client connected";
 }

@@ -20,7 +20,8 @@ public:
 	{
 		std::string command_full;
 		std::string command_abrv;
-		std::function<void(std::vector<std::string> const &)> func;
+		std::string help_short;
+		std::function<std::string(std::vector<std::string> const &)> func;
 
 		bool operator==(std::string const & str)
 		{
@@ -28,13 +29,13 @@ public:
 		}
 	};
 
-	Shell()         = default;
+	Shell();
 	Shell(Shell &&) = default;
 	~Shell()        = default;
 
 	Shell & operator=(Shell &&) = default;
 
-	bool exec(std::string const &);
+	bool exec(std::string const &, std::string &);
 
 	void add_command(command &&);
 
