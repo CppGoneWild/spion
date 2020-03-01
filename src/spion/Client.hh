@@ -7,6 +7,7 @@
 #include "common/protocol/string.hh"
 
 #include "Shell.hh"
+#include "Dictionary.hh"
 
 #include <list>
 #include <regex>
@@ -27,7 +28,7 @@ public:
 
 	Client & operator=(Client &&) = default;
 
-	explicit Client(common::net::socket && socket);
+	explicit Client(common::net::socket && socket, Dictionary &);
 
 	bool operator==(common::net::socket_handler_t) const;
 	bool operator!=(common::net::socket_handler_t) const;	

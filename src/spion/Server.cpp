@@ -33,29 +33,94 @@ void spion::Server::clean()
 	_th.join();
 }
 
-void spion::Server::send(const char * id_str, int value)
+
+
+void spion::Server::send_ro(const char * id_str, int value)
 {
+	auto payload = common::protocol::string::make(id_str, value);
+
+	{
+		std::lock_guard<std::mutex> lck(_mtx);
+		auto found = _dico.find(id_str);
+		if (found == _dico.end())
+			_dico.insert(std::pair(std::string(id_str), bucket(bucket::type_t::data)));
+
+		_send(id_str, payload);
+	}
+}
+
+void spion::Server::send_ro(const char * id_str, unsigned int value)
+{
+	auto payload = common::protocol::string::make(id_str, value);
+
+	{
+		std::lock_guard<std::mutex> lck(_mtx);
+		auto found = _dico.find(id_str);
+		if (found == _dico.end())
+			_dico.insert(std::pair(std::string(id_str), bucket(bucket::type_t::data)));
+
+		_send(id_str, payload);
+	}
+}
+
+void spion::Server::send_ro(const char * id_str, double value)
+{
+	auto payload = common::protocol::string::make(id_str, value);
+
+	{
+		std::lock_guard<std::mutex> lck(_mtx);
+		auto found = _dico.find(id_str);
+		if (found == _dico.end())
+			_dico.insert(std::pair(std::string(id_str), bucket(bucket::type_t::data)));
+
+		_send(id_str, payload);
+	}
+}
+
+void spion::Server::send_ro(const char * id_str, char const * value)
+{
+	auto payload = common::protocol::string::make(id_str, value);
+
+	{
+		std::lock_guard<std::mutex> lck(_mtx);
+		auto found = _dico.find(id_str);
+		if (found == _dico.end())
+			_dico.insert(std::pair(std::string(id_str), bucket(bucket::type_t::data)));
+
+		_send(id_str, payload);
+	}
+}
+
+
+
+void spion::Server::send_rw(const char * id_str, int & value)
+{
+	std::lock_guard<std::mutex> lck(_mtx);
+	if (had_to_write(id_str, value))
+		return;
+
 	auto payload = common::protocol::string::make(id_str, value);
 
 	_send(id_str, payload);
 }
 
-void spion::Server::send(const char * id_str, unsigned int value)
+void spion::Server::send_rw(const char * id_str, unsigned int & value)
 {
+	std::lock_guard<std::mutex> lck(_mtx);
+	if (had_to_write(id_str, value))
+		return;
+
 	auto payload = common::protocol::string::make(id_str, value);
 
 	_send(id_str, payload);
 }
 
-void spion::Server::send(const char * id_str, double value)
+void spion::Server::send_rw(const char * id_str, double & value)
 {
-	auto payload = common::protocol::string::make(id_str, value);
+	std::lock_guard<std::mutex> lck(_mtx);
+	if (had_to_write(id_str, value))
+		return;
 
-	_send(id_str, payload);
-}
-
-void spion::Server::send(const char * id_str, char const * value)
-{
 	auto payload = common::protocol::string::make(id_str, value);
 
 	_send(id_str, payload);
@@ -93,7 +158,7 @@ bool spion::Server::_thread_fct()
 
 void spion::Server::on_new_client(common::net::socket && s)
 {
-	_clients.emplace_back(std::move(s));
+	_clients.emplace_back(std::move(s), _dico);
 	_poller.add(_clients.back().socket());
 
 
@@ -114,10 +179,64 @@ void spion::Server::on_client_wake(common::net::socket_handler_t s)
 	}
 }
 
+
+
 void spion::Server::_send(char const * id_str, common::protocol::payload const & payload)
 {
-	std::lock_guard<std::mutex> lck(_mtx);
 	for (auto it = _clients.begin(); it != _clients.end(); ++it)
 		if (it->is_listening_to(id_str))
 			it->send(payload);
 }
+
+
+
+
+
+bool spion::Server::had_to_write(const char * id_str, int & value)
+{
+	auto found = _dico.find(id_str);
+	if (found == _dico.end()) {
+		_dico.insert(std::pair(std::string(id_str), bucket(bucket::type_t::data)));
+		return (false);
+	}
+
+	if (found->second.has_data && found->second.type == bucket::type_t::data) {
+		value = std::stoi(found->second.data);
+		found->second.has_data = false;
+		return (true);
+	}
+	return (false);
+}
+
+bool spion::Server::had_to_write(const char * id_str, unsigned int & value)
+{
+	auto found = _dico.find(id_str);
+	if (found == _dico.end()) {
+		_dico.insert(std::pair(std::string(id_str), bucket(bucket::type_t::data)));
+		return (false);
+	}
+
+	if (found->second.has_data && found->second.type == bucket::type_t::data) {
+		value = std::stoul(found->second.data);
+		found->second.has_data = false;
+		return (true);
+	}
+	return (false);
+}
+
+bool spion::Server::had_to_write(const char * id_str, double & value)
+{
+	auto found = _dico.find(id_str);
+	if (found == _dico.end()) {
+		_dico.insert(std::pair(std::string(id_str), bucket(bucket::type_t::data)));
+		return (false);
+	}
+
+	if (found->second.has_data && found->second.type == bucket::type_t::data) {
+		value = std::stod(found->second.data);
+		found->second.has_data = false;
+		return (true);
+	}
+	return (false);
+}
+

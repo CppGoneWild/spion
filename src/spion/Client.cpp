@@ -6,7 +6,7 @@
 #include "logg.hh"
 
 
-spion::Client::Client(common::net::socket && socket)
+spion::Client::Client(common::net::socket && socket, Dictionary & dico)
 : _socket(std::move(socket)),
   _partial_buffer(),
   _shell(),
@@ -22,8 +22,38 @@ spion::Client::Client(common::net::socket && socket)
 		}
 		return (res);
 	};
-
 	_shell.add_command(Shell::command { "read", "r", "Listen to a variable. Use regex.", read_cmd } );
+
+	std::function<std::string(std::vector<std::string> const &)> write_cmd =
+	[&dico](std::vector<std::string> const & cmd) -> std::string
+	{
+		if (cmd.size() < 3)
+			return ("write:syntax error     id_name value");
+
+		auto found = dico.find(cmd[1]);
+		if (found == dico.end()){
+			dico.insert(std::pair(cmd[1], bucket(cmd[2], bucket::type_t::data)));
+		}
+		else if (found->second.type == bucket::type_t::data) {
+			found->second.data = cmd[2];
+			found->second.has_data = true;
+		}
+		else{
+			return (std::string("write: " + cmd[1] + " is not a data type."));
+		}
+		return ("");
+	};
+	_shell.add_command(Shell::command { "write", "w", "Write to a variable.", write_cmd } );
+
+	std::function<std::string(std::vector<std::string> const &)> ls_cmd =
+	[&dico](std::vector<std::string> const & cmd) -> std::string
+	{
+		std::string res("list of all variable and hook");
+		for (auto it = dico.cbegin(); it != dico.cend(); ++it)
+			res += "\n" + it->first;
+		return (res);
+	};
+	_shell.add_command(Shell::command { "ls", "", "List all variable and hook.", ls_cmd } );
 
 	std::string welcome_str;
 	_shell.exec({"help"}, welcome_str);

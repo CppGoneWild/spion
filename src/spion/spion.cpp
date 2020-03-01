@@ -25,21 +25,36 @@ void spion::clean()
 
 void spion::send_ro(const char * id_str, int value)
 {
-	_static_spion_server().send(id_str, value);	
+	_static_spion_server().send_ro(id_str, value);
 }
 
 void spion::send_ro(const char * id_str, unsigned int value)
 {
-	_static_spion_server().send(id_str, value);	
+	_static_spion_server().send_ro(id_str, value);
 }
 
 void spion::send_ro(const char * id_str, double value)
 {
-	_static_spion_server().send(id_str, value);	
+	_static_spion_server().send_ro(id_str, value);
 }
 
 void spion::send_ro(const char * id_str, char const * value)
 {
-	_static_spion_server().send(id_str, value);	
+	_static_spion_server().send_ro(id_str, value);
 }
 
+
+void spion::send_rw(const char * id_str, int & value)
+{
+	_static_spion_server().send_rw(id_str, value);
+}
+
+void spion::send_rw(const char * id_str, unsigned int & value)
+{
+	_static_spion_server().send_rw(id_str, value);
+}
+
+void spion::send_rw(const char * id_str, double & value)
+{
+	_static_spion_server().send_rw(id_str, value);
+}

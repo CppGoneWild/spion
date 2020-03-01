@@ -21,6 +21,9 @@ void send_ro(const char * id_str, unsigned int);
 void send_ro(const char * id_str, double);
 void send_ro(const char * id_str, char const *);
 
+void send_rw(const char * id_str, int &);
+void send_rw(const char * id_str, unsigned int &);
+void send_rw(const char * id_str, double &);
 
 
 } // spion
