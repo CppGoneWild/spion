@@ -9,7 +9,7 @@ static common::protocol::payload _make(std::string const & value)
 	str += common::protocol::string::telnet_end;
 
 	common::protocol::payload res;
-	res.reserve(str.size() + 1);
+	res.reserve(str.size());
 	res.insert(res.end(), str.begin(), str.end());
 
 	return (res);
@@ -56,15 +56,26 @@ common::protocol::payload common::protocol::string::make(char const * value)
 
 
 
-std::string common::protocol::string::extract_telnet_string(std::string & src)
+std::string common::protocol::string::payload_to_string(payload::iterator first,
+                                                        payload::iterator last)
 {
 	std::string result;
-	auto found = src.find(telnet_end);
+	for (; first != last; ++first)
+		result += *first;
+	return (result);
+}
 
-	if (found != std::string::npos) {
-		result = src.substr(0, found);
-		src.erase(0, result.size() + telnet_end_size);
+std::string common::protocol::string::extract_telnet_string(payload & src)
+{
+	for (auto it = src.begin(); it != src.end(); ++it)
+	{
+		if ((it + 1) != src.end() &&  *it == telnet_end[0] && *(it + 1) == telnet_end[1])
+		{
+			std::string result = payload_to_string(src.begin(), it);
+			src.erase(src.begin(), it + telnet_end_size);
+			return (result);
+		}
 	}
 
-	return (result);
+	return (std::string());
 }

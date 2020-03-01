@@ -8,7 +8,7 @@
 
 spion::Client::Client(common::net::socket && socket)
 : _socket(std::move(socket)),
-  _partial_msg_buffer(),
+  _partial_buffer(),
   _shell(),
   _listening_id()
 {
@@ -69,7 +69,7 @@ bool spion::Client::send(common::protocol::payload const & payload)
 
 spion::Client::recv_event spion::Client::on_recv()
 {
-	std::string received = common::protocol::string::on_recv(_socket, _partial_msg_buffer);
+	std::string received = common::protocol::string::on_recv(_socket, _partial_buffer);
 
 	if (received.empty())
 		return(recv_event::disconnection);
@@ -79,7 +79,7 @@ spion::Client::recv_event spion::Client::on_recv()
 		if (_shell.exec(received) == false)
 			COUT_INFO << received;
 
-		received = common::protocol::string::extract_telnet_string(_partial_msg_buffer);
+		received = common::protocol::string::extract_telnet_string(_partial_buffer);
 	} while (received.empty() == false);
 
 	return(recv_event::payload);

@@ -7,6 +7,7 @@
 
 
 #include <string>
+#include <array>
 
 
 
@@ -31,11 +32,11 @@ payload make(const char * str);
 
 
 template <class SOCK_T>
-std::string on_recv(SOCK_T &, std::string & partial_msg_buffer);
+std::string on_recv(SOCK_T &, payload & partial_msg_buffer);
 
-std::string extract_telnet_string(std::string & src);
+std::string payload_to_string(payload::iterator first, payload::iterator last);
 
-// std::string extract(payload const &, std::string & value);
+std::string extract_telnet_string(payload & src);
 
 
 

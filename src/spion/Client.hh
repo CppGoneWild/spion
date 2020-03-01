@@ -54,7 +54,7 @@ private:
 	Client & operator=(Client const &) = delete;
 
 	common::net::socket _socket;
-	std::string _partial_msg_buffer;
+	common::protocol::payload _partial_buffer;
 	Shell _shell;
 
 	std::list<std::regex> _listening_id;

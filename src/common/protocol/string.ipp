@@ -8,10 +8,10 @@ namespace string
 
 
 template <class SOCK_T>
-std::string on_recv(SOCK_T & sock, std::string & partial_msg_buffer)
+std::string on_recv(SOCK_T & sock, payload & partial_msg_buffer)
 {
-	static constexpr int read_size = 128;
-	char buffer[read_size + 1];
+	static constexpr int read_size = 256;
+	std::array<char, read_size> buffer;
 	int red;
 
 	for (;;)
@@ -20,16 +20,17 @@ std::string on_recv(SOCK_T & sock, std::string & partial_msg_buffer)
 		if (msg.empty() == false)
 			return (msg);
 
-		red = sock.recv(buffer, read_size);
+		red = sock.recv(buffer.data(), buffer.size());
 
 		if (red <= 0)
 			break; // error or disconnection
 
-		buffer[red] = '\0';
-		partial_msg_buffer += buffer;
+		partial_msg_buffer.insert(partial_msg_buffer.end(), buffer.begin(), buffer.begin() + red);
 	}
 
-	return (std::move(partial_msg_buffer));
+	std::string result = payload_to_string(partial_msg_buffer.begin(), partial_msg_buffer.end());
+	partial_msg_buffer.clear();
+	return (result);
 }
 
 
